@@ -200,4 +200,35 @@ resource "aws_security_group_rule" "allow_alb_http_outbound" {
   cidr_blocks = ["0.0.0.0/0"]
 }
 
+# Amazon Route53 setup
+resource "aws_route53_zone" "primary" {
+  name = "rini.me"
+}
+
+# Root domain pointing to ALB
+resource "aws_route53_record" "root" {
+  zone_id = aws_route53_zone.primary.id
+  name    = "rini.me"
+  type    = "A"
+
+  alias {
+    name                   = aws_lb.load_balancer.dns_name
+    zone_id                = aws_lb.load_balancer.zone_id
+    evaluate_target_health = true
+  }
+}
+
+# www subdomain
+resource "aws_route53_record" "www" {
+  zone_id = aws_route53_zone.primary.id
+  name    = "www.rini.me"
+  type    = "A"
+
+  alias {
+    name                   = aws_lb.load_balancer.dns_name
+    zone_id                = aws_lb.load_balancer.zone_id
+    evaluate_target_health = true
+  }
+}
+
 
