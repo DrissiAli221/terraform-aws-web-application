@@ -75,8 +75,17 @@ data "aws_vpc" "default_vpc" {
   default = true
 }
 
-data "aws_subnet_ids" "default_subnet" {
-  vpc_id = data.aws_vpc.default_vpc.id
+# Deprecated
+# data "aws_subnet_ids" "default_subnet" {
+#   vpc_id = data.aws_vpc.default_vpc.id
+# }
+
+# All subnets in the default VPC
+data "aws_subnets" "default_subnets" {
+  filter {
+    name   = "vpc-id"
+    values = [data.aws_vpc.default_vpc.id]
+  }
 }
 
 
@@ -108,9 +117,9 @@ resource "aws_security_group_rule" "allow_http_outbound" {
 
 # Application Load Balancer Setup
 resource "aws_lb" "load_balancer" {
-  name               = "web_app_lb"
+  name               = "web-app-lb"
   load_balancer_type = "application"
-  subnets            = data.aws_subnet_ids.default_subnet.ids
+  subnets            = data.aws_subnets.default_subnets.ids
   security_groups    = [aws_security_group.alb.id]
 }
 
@@ -229,6 +238,18 @@ resource "aws_route53_record" "www" {
     zone_id                = aws_lb.load_balancer.zone_id
     evaluate_target_health = true
   }
+}
+
+# Temporary relational Database Setup
+resource "aws_db_instance" "db_instance" {
+  allocated_storage   = 20
+  storage_type        = "standard"
+  engine              = "postgres"
+  instance_class      = "db.t3.micro"
+  username            = "test"
+  password            = "testtest"
+  skip_final_snapshot = true
+  publicly_accessible = false
 }
 
 
